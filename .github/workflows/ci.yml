@@ -1,0 +1,35 @@
+name: CI/CD Pipeline - Build & Push to GHCR
+on: [push]
+
+permissions:
+  contents: read
+  packages: write # Da permiso automático al GITHUB_TOKEN para subir paquetes
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Descargar código del repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Convertir usuario a minúsculas (Requisito de Docker)
+        run: |
+          echo "OWNER_LC=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: 3. Construir imagen y ejecutar Smoke Test
+        run: |
+          docker build -t ghcr.io/${{ env.OWNER_LC }}/mi-api:latest .
+          docker run -d -p 8081:8081 --name test-container ghcr.io/${{ env.OWNER_LC }}/mi-api:latest
+          sleep 3
+          curl --fail http://localhost:8081
+
+      - name: 4. Iniciar sesión en GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 5. Subir imagen al registro (Push)
+        run: |
+          docker push ghcr.io/${{ env.OWNER_LC }}/mi-api:latest
