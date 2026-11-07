@@ -7,7 +7,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-type','application/json')
         self.end_headers()
         res = {
-            "mensaje": "Version 1.0 -Computacion Paralela","pod_id": socket.gethostname()
+            "mensaje": "Version2.0 -Computacion Paralela lanzado desde github actions","pod_id": socket.gethostname()
         }
         self.wfile.write(json.dumps(res).encode('utf-8'))
 
